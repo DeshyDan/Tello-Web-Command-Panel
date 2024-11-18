@@ -42,9 +42,9 @@ class Tello:
     TELLO_IP = '192.168.10.1'  # Tello IP address
 
     # Video stream, server socket
-    VS_UDP_IP = '0.0.0.0'
-    DEFAULT_VS_UDP_PORT = 11111
-    VS_UDP_PORT = DEFAULT_VS_UDP_PORT
+    VIDEO_STREAM_UDP_IP = '0.0.0.0'
+    DEFAULT_VIDEO_STREAM_UDP_PORT = 11111
+    VIDEO_STREAM_UDP_PORT = DEFAULT_VIDEO_STREAM_UDP_PORT
 
     CONTROL_UDP_PORT = 8889
     STATE_UDP_PORT = 8890
@@ -101,7 +101,7 @@ class Tello:
     def __init__(self,
                  host=TELLO_IP,
                  retry_count=RETRY_COUNT,
-                 vs_udp=VS_UDP_PORT):
+                 video_stream_udp=VIDEO_STREAM_UDP_PORT):
 
         global threads_initialized, client_socket, drones
 
@@ -130,14 +130,14 @@ class Tello:
 
         self.LOGGER.info("Tello instance was initialized. Host: '{}'. Port: '{}'.".format(host, Tello.CONTROL_UDP_PORT))
 
-        self.vs_udp_port = vs_udp
+        self.video_streaming_udp_port = video_stream_udp
 
 
     def change_vs_udp(self, udp_port):
         """Change the UDP Port for sending video feed from the drone.
         """
-        self.vs_udp_port = udp_port
-        self.send_control_command(f'port 8890 {self.vs_udp_port}')
+        self.video_streaming_udp_port = udp_port
+        self.send_control_command(f'port 8890 {self.video_streaming_udp_port}')
 
     def get_own_udp_object(self):
         """Get own object from the global drones dict. This object is filled
@@ -419,7 +419,7 @@ class Tello:
         """Internal method, you normally wouldn't call this youself.
         """
         address_schema = 'udp://@{ip}:{port}'  # + '?overrun_nonfatal=1&fifo_size=5000'
-        address = address_schema.format(ip=self.VS_UDP_IP, port=self.vs_udp_port)
+        address = address_schema.format(ip=self.VIDEO_STREAM_UDP_IP, port=self.video_streaming_udp_port)
         return address
 
     def get_frame_read(self, with_queue = False, max_queue_len = 32) -> 'BackgroundFrameRead':
@@ -604,8 +604,8 @@ class Tello:
             If the response is 'Unknown command' you have to update the Tello
             firmware. This can be done using the official Tello app.
         """
-        if self.DEFAULT_VS_UDP_PORT != self.vs_udp_port:
-            self.change_vs_udp(self.vs_udp_port)
+        if self.DEFAULT_VIDEO_STREAM_UDP_PORT != self.video_streaming_udp_port:
+            self.change_vs_udp(self.video_streaming_udp_port)
         self.send_control_command("streamon")
         self.stream_on = True
 
