@@ -10,7 +10,7 @@ from collections import deque
 from threading import Thread, Lock
 from typing import Optional, Union, Type, Dict
 
-from backend.models.enforce_types import enforce_types
+from .enforce_types import enforce_types
 
 import av
 import numpy as np

@@ -1,1 +1,4 @@
-from tello import tello_bp
+from flask_socketio import SocketIO
+
+socketio = SocketIO()
+
