@@ -1,4 +1,4 @@
-from models import Tello
+from backend.models import Tello
 
 tello = Tello()
 

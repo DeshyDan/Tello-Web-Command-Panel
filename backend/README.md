@@ -51,7 +51,7 @@ tello.land()
 ```
 
 ### More examples
-In the [examples](examples/) directory there are some code examples.
+In the [examples](backend/examples/) directory there are some code examples.
 Comments in the examples are mostly in both english and chinese.
 
 - [taking a picture](examples/take-picture.py)

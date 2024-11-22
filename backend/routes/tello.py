@@ -1,9 +1,9 @@
-from html.parser import HTMLParser
 from http import HTTPStatus
 
-from flask import Blueprint, jsonify, request, g
+from flask import Blueprint, jsonify, g
 
 from models import Tello
+from .. import socketio
 
 tello_bp = Blueprint("tello", __name__)
 
@@ -17,8 +17,7 @@ def get_tello():
     return g.tello
 
 
-@tello_bp.post("/connect")
-# TODO: Check is connection was already established
+@socketio.on("connect")
 def connect():
     try:
         tello = get_tello()
@@ -29,7 +28,7 @@ def connect():
         return jsonify({"message": "Could not connect to Tello"}), HTTPStatus.GATEWAY_TIMEOUT
 
 
-@tello_bp.post("/move/<string:direction>")
+@socketio.on("move")
 def move(direction):
     valid_moves = ["up", "down", "left", "right", "forward", "back"]
     if direction not in valid_moves:
@@ -42,7 +41,9 @@ def move(direction):
         return jsonify({"message": "Did not move"}), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
-@tello_bp.get("/state")
+socketio.on("/state")
+
+
 def get_state():
     tello = get_tello()
     state = tello.get_current_state()

@@ -1,7 +1,5 @@
 #Simply import of "panoramaModule.py" and you can use each function by calling it with name of the drone inside arguments.
 from djitellopy import Tello
-import cv2
-import time
 import panoramaModule
 
 

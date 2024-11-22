@@ -1,7 +1,7 @@
 import time, cv2
 from threading import Thread
 
-from models import Tello
+from backend.models import Tello
 
 tello = Tello()
 
