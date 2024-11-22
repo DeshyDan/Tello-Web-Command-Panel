@@ -1,6 +1,7 @@
 import time, cv2
 from threading import Thread
-from djitellopy import Tello
+
+from models import Tello
 
 tello = Tello()
 
