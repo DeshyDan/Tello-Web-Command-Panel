@@ -13,6 +13,8 @@ app = Flask(__name__)
 CORS(app, resources={
     r"/*": {
         "origins": [
+            "http://localhost:5001",
+            "http://localhost:5173",
             "*"
         ],
         "supports_credentials": True
@@ -22,6 +24,8 @@ CORS(app, resources={
 socketio = SocketIO(
     app,
     cors_allowed_origins=[
+        "http://localhost:5001",
+        "http://localhost:5173",
         "*"
     ],
     async_mode='gevent',
@@ -36,6 +40,7 @@ socketio = SocketIO(
 from routes.tello import tello_bp
 
 app.register_blueprint(tello_bp)
+
 
 @app.after_request
 def add_cors_headers(response):

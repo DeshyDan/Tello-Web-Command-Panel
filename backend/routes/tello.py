@@ -33,7 +33,7 @@ def on_connect():
         status = "success" if success else "error"
         message = f"{'Successfully connected' if success else 'Failed to connect'} to Tello dronr"
 
-        tello.takeoff() if success else logger.debug("Took off")
+        tello.takeoff()
 
         socketio.emit("connection_status", {
             "status": status,
@@ -51,13 +51,14 @@ def on_connect():
 def on_disconnect():
     logger.info("Client disconnected from Tello namespace")
     try:
-        tello = get_tello()
-        tello.stop()
-        tello.land()
+        pass
+        # tello = get_tello()
+        # tello.stop()
+        # tello.land()
 
         # Clear resources
-        if hasattr(g, 'tello'):
-            del g.tello
+        # if hasattr(g, 'tello'):
+        #     del g.tello
     except Exception as e:
         logger.error(f"Error during disconnection: {e}")
 
