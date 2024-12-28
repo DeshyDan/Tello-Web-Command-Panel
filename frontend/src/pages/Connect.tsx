@@ -1,9 +1,14 @@
 import {Card, CardContent} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
-import tello from "./assets/tello.png"
-import logo from "./assets/dji.svg"
+import tello from "../assets/tello.png"
+import logo from "../assets/dji.svg"
 
-const DJIControlPanel = () => {
+interface Props {
+    onConnect: () => void
+    isConnected: boolean
+}
+
+const DJIControlPanel = ({onConnect, isConnected}: Props) => {
     return (
         <div className="min-h-screen bg-black flex flex-col items-center">
             {/* Header */}
@@ -39,6 +44,7 @@ const DJIControlPanel = () => {
                             variant="secondary"
 
                             className="h-30 w-60 rounded-2xl text-3xl px-8 bg-white text-black hover:bg-gray-300"
+                            onClick={() => onConnect()}
                         >
                             Connect
                         </Button>
