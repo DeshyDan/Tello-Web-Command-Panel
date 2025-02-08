@@ -2,18 +2,18 @@
 """
 
 # coding=utf-8
-import logging
 import socket
 import time
-from datetime import datetime
 from collections import deque
+from datetime import datetime
 from threading import Thread, Lock
 from typing import Optional, Union, Type, Dict
 
-from .enforce_types import enforce_types
-
 import av
 import numpy as np
+
+from .enforce_types import enforce_types
+from ..utils.Logger import Logger
 
 threads_initialized = False
 drones: Optional[dict] = {}
@@ -64,15 +64,7 @@ class Tello:
     CAMERA_DOWNWARD = 1
 
     # Set up logger
-    HANDLER = logging.StreamHandler()
-    FORMATTER = logging.Formatter('[%(levelname)s] %(filename)s - %(lineno)d - %(message)s')
-    HANDLER.setFormatter(FORMATTER)
-
-    LOGGER = logging.getLogger('djitellopy')
-    LOGGER.addHandler(HANDLER)
-    LOGGER.setLevel(logging.INFO)
-    # Use Tello.LOGGER.setLevel(logging.<LEVEL>) in YOUR CODE
-    # to only receive logs of the desired level and higher
+    logger = Logger.get_logger(name="Tello Model")
 
     # Conversion functions for state protocol fields
     INT_STATE_FIELDS = (
@@ -127,7 +119,7 @@ class Tello:
 
         drones[host] = {'responses': [], 'state': {}}
 
-        self.LOGGER.info("Tello instance was initialized. Host: '{}'. Port: '{}'.".format(host, Tello.CONTROL_UDP_PORT))
+        self.logger.info("Tello instance was initialized. Host: '{}'. Port: '{}'.".format(host, Tello.CONTROL_UDP_PORT))
 
         self.video_streaming_udp_port = video_stream_udp
 
@@ -158,7 +150,7 @@ class Tello:
                 data, address = client_socket.recvfrom(1024)
 
                 address = address[0]
-                Tello.LOGGER.debug('Data received from {} at client_socket'.format(address))
+                Tello.logger.debug('Data received from {} at client_socket'.format(address))
 
                 if address not in drones:
                     continue
@@ -166,7 +158,7 @@ class Tello:
                 drones[address]['responses'].append(data)
 
             except Exception as e:
-                Tello.LOGGER.error(e)
+                Tello.logger.error(e)
                 break
 
     @staticmethod
@@ -184,7 +176,7 @@ class Tello:
                 data, address = state_socket.recvfrom(1024)
 
                 address = address[0]
-                Tello.LOGGER.debug('Data received from {} at state_socket'.format(address))
+                Tello.logger.debug('Data received from {} at state_socket'.format(address))
 
                 if address not in drones:
                     continue
@@ -195,7 +187,7 @@ class Tello:
                 drones[address]['state'] = data
 
             except Exception as e:
-                Tello.LOGGER.error(e)
+                Tello.logger.error(e)
                 break
 
     @staticmethod
@@ -204,7 +196,7 @@ class Tello:
         Internal method, you normally wouldn't call this yourself.
         """
         state = state.strip()
-        Tello.LOGGER.debug('Raw state data: {}'.format(state))
+        Tello.logger.debug('Raw state data: {}'.format(state))
 
         if state == 'ok':
             return {}
@@ -223,9 +215,9 @@ class Tello:
                 try:
                     value = num_type(value)
                 except ValueError as e:
-                    Tello.LOGGER.debug('Error parsing state value for {}: {} to {}'
+                    Tello.logger.debug('Error parsing state value for {}: {} to {}'
                                        .format(key, value, num_type))
-                    Tello.LOGGER.error(e)
+                    Tello.logger.error(e)
                     continue
 
             state_dict[key] = value
@@ -442,10 +434,10 @@ class Tello:
         # So wait at least self.TIME_BTW_COMMANDS seconds
         diff = time.time() - self.last_received_command_timestamp
         if diff < self.TIME_BTW_COMMANDS:
-            self.LOGGER.debug('Waiting {} seconds to execute command: {}...'.format(diff, command))
+            self.logger.debug('Waiting {} seconds to execute command: {}...'.format(diff, command))
             time.sleep(diff)
 
-        self.LOGGER.info("Send command: '{}'".format(command))
+        self.logger.info("Send command: '{}'".format(command))
         timestamp = time.time()
 
         client_socket.sendto(command.encode('utf-8'), self.address)
@@ -455,7 +447,7 @@ class Tello:
         while not responses:
             if time.time() - timestamp > timeout:
                 message = "Aborting command '{}'. Did not receive a response after {} seconds".format(command, timeout)
-                self.LOGGER.warning(message)
+                self.logger.warning(message)
                 return message
             time.sleep(0.1)  # Sleep during send command
 
@@ -465,11 +457,11 @@ class Tello:
         try:
             response = first_response.decode("utf-8")
         except UnicodeDecodeError as e:
-            self.LOGGER.error(e)
+            self.logger.error(e)
             return "response decode error"
         response = response.rstrip("\r\n")
 
-        self.LOGGER.info("Response {}: '{}'".format(command, response))
+        self.logger.info("Response {}: '{}'".format(command, response))
         return response
 
     def send_command_without_return(self, command: str):
@@ -478,7 +470,7 @@ class Tello:
         """
         # Commands very consecutive makes the drone not respond to them. So wait at least self.TIME_BTW_COMMANDS seconds
 
-        self.LOGGER.info("Send command (no response expected): '{}'".format(command))
+        self.logger.info("Send command (no response expected): '{}'".format(command))
         client_socket.sendto(command.encode('utf-8'), self.address)
 
     def send_control_command(self, command: str, timeout: int = RESPONSE_TIMEOUT) -> bool:
@@ -499,7 +491,7 @@ class Tello:
             if 'ok' in response.lower():
                 return True
 
-            self.LOGGER.debug("Command attempt #{} failed for command: '{}'".format(i, command))
+            self.logger.debug("Command attempt #{} failed for command: '{}'".format(i, command))
 
         self.raise_result_error(command, response)
         return False  # never reached
@@ -514,7 +506,7 @@ class Tello:
         try:
             response = str(response)
         except TypeError as e:
-            self.LOGGER.error(e)
+            self.logger.error(e)
 
         if any(word in response for word in ('error', 'ERROR', 'False')):
             self.raise_result_error(command, response)
@@ -557,7 +549,7 @@ class Tello:
             for i in range(repetitions):
                 if self.get_current_state():
                     t = i / repetitions  # in seconds
-                    Tello.LOGGER.debug("'.connect()' received first state packet after {} seconds".format(t))
+                    Tello.logger.debug("'.connect()' received first state packet after {} seconds".format(t))
                     break
                 time.sleep(1 / repetitions)
 
@@ -1074,7 +1066,7 @@ class BackgroundFrameRead:
         # According to issue #90 the decoder might need some time
         # https://github.com/damiafuentes/DJITelloPy/issues/90#issuecomment-855458905
         try:
-            Tello.LOGGER.debug('trying to grab video frames...')
+            Tello.logger.debug('trying to grab video frames...')
             self.container = av.open(self.address, timeout=(Tello.FRAME_GRAB_TIMEOUT, None))
         except av.error.ExitError:
             raise TelloException('Failed to grab video frames from video stream')

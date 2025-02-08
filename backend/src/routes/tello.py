@@ -1,10 +1,13 @@
 from flask import Blueprint, g
+from flask_socketio import emit
+
 from main import socketio
 from models import Tello
-import logging
+from utils.Logger import Logger
 
-logger = logging.getLogger(__name__)
+TELLO_NAMESPACE = "/tello"
 
+logger = Logger.get_logger()
 tello_bp = Blueprint("tello", __name__)
 
 
@@ -16,186 +19,211 @@ def get_tello():
         if 'tello' not in g:
             g.tello = Tello()
         return g.tello
-    except Exception as e:
-        logger.error(f"Failed to initialize Tello instance: {e}")
+    except Exception:
+        logger.error('Failed to initialize Tello instance', exc_info=True)
         raise
 
 
-@socketio.on("connect", namespace="/tello")
+@socketio.on("connect", namespace=TELLO_NAMESPACE)
 def on_connect():
     """
-    Opens UDP connection with Tello
+    When the client connects to the Tello namespace, attempt to connect to the Tello drone
     """
     logger.info("New client connected to Tello namespace")
     try:
         tello = get_tello()
         success = tello.connect()
+
         status = "success" if success else "error"
-        message = f"{'Successfully connected' if success else 'Failed to connect'} to Tello dronr"
+        message = f"{'Successfully connected' if success else 'Failed to connect'} to Tello drone"
 
         tello.takeoff()
 
-        socketio.emit("connection_status", {
+        logger.info("Tello drone connected and took off")
+
+        emit("connection_status", {
             "status": status,
             "message": message
-        }, namespace="/tello")
+        })
     except Exception as e:
-        logger.error(f"Connection error: {e}")
-        socketio.emit('connection_status', {
+        logger.error(f"Connection error:", exc_info=True)
+        emit('connection_status', {
             "status": "error",
             "message": f"Unexpected connection error: {str(e)}"
-        }, namespace="/tello")
+        })
 
 
-@socketio.on("disconnect", namespace="/tello")
+@socketio.on("disconnect", namespace=TELLO_NAMESPACE)
 def on_disconnect():
+    """
+    When the client disconnects, stop the drone and clear resources
+    """
     logger.info("Client disconnected from Tello namespace")
     try:
-        pass
-        # tello = get_tello()
-        # tello.stop()
-        # tello.land()
+
+        tello = get_tello()
+
+        tello.stop()
+        tello.land()
+
+        logger.info("Tello drone stopped and landed")
 
         # Clear resources
-        # if hasattr(g, 'tello'):
-        #     del g.tello
-    except Exception as e:
-        logger.error(f"Error during disconnection: {e}")
+        if hasattr(g, 'tello'):
+            del g.tello
+    except Exception:
+        logger.error("Error during disconnection: ", exc_info=True)
 
 
-@socketio.on("move", namespace="/tello")
+@socketio.on("move", namespace=TELLO_NAMESPACE)
 def move(direction):
     """
     Moves Tello in a given direction.
     Parameters:
         direction (str): direction to move to
     """
+    logger.info("Received move event: %s", direction)
 
     valid_moves = ["up", "down", "left", "right", "forward", "back"]
 
     if direction not in valid_moves:
-        return socketio.emit('move_status', {
+        logger.error("Invalid move command: %s", direction)
+        return emit('move_status', {
             "status": "error",
             "message": f"Invalid move. Must be one of: {', '.join(valid_moves)}"
-        }, namespace="/tello")
+        })
 
     try:
         tello = get_tello()
 
-        # Added distance parameter and expanded error handling
         moved = tello.move(direction, 20)  # 20 cm movement
 
         status = "success" if moved else "error"
         message = f"{'Successfully' if moved else 'Failed to'} moved {direction}"
 
-        socketio.emit("move_status", {
+        emit("move_status", {
             "status": status,
             "message": message
-        }, namespace="/tello")
+        })
 
     except Exception as e:
-        logger.error(f"Move error: {e}")
-        socketio.emit('move_status', {
+        logger.error(f"Move error", exc_info=True)
+        emit('move_status', {
             "status": "error",
             "message": f"Unexpected error during movement: {str(e)}"
-        }, namespace="/tello")
+        })
 
 
-@socketio.on("rotate", namespace="/tello")
+@socketio.on("rotate", namespace=TELLO_NAMESPACE)
 def rotate(direction):
     """
     Rotates Tello in given direction
     """
+    logger.info("Received rotate event: %s", direction)
+
     valid_moves_map = ["cw", "ccw"]
 
     if direction not in valid_moves_map:
-        return socketio.emit("move_status", {
+        logger.error("Invalid rotation command: %s", direction)
+        return emit("move_status", {
             "status": "error",
             "message": f"Invalid rotation command. Must be one of: {', '.join(valid_moves_map)}"
-        }, namespace="/tello")
+        })
 
     try:
         tello = get_tello()
+
         rotation_actions = {
             "cw": tello.rotate_clockwise,
             "ccw": tello.rotate_counter_clockwise
         }
 
+        # We get a callable from the map and call it with the rotation amount
         rotated = rotation_actions.get(direction)(20)
 
         status = "success" if rotated else "error"
         message = f"{'Successfully' if rotated else 'Failed to'} rotated {direction}"
 
-        socketio.emit("move_status", {
+        emit("move_status", {
             "status": status,
             "message": message
-        }, namespace="/tello")
+        })
 
     except Exception as e:
         logger.error(f"Rotate error: {e}")
-        socketio.emit('move_status', {
+        emit('move_status', {
             "status": "error",
             "message": f"Unexpected error during movement: {str(e)}"
-        }, namespace="/tello")
+        }, namespace=TELLO_NAMESPACE)
 
 
-@socketio.on("flip", namespace="/tello")
+@socketio.on("flip", namespace=TELLO_NAMESPACE)
 def flip(direction):
     """
     Flips Tello in given direction
     Parameters:
         direction (str): direction to flip in
     """
+
+    logger.info("Received flip event: %s", direction)
+
     valid_moves = ["left", "right", "forward", "backward"]
+
     if direction not in valid_moves:
-        return socketio.emit("move_status", {
+        logger.error("Invalid flip command: %s", direction)
+        return emit("move_status", {
             "status": "error",
             "message": f"Invalid flip command. Must be one of: {', '.join(valid_moves)}"
-        }, namespace="/tello")
+        })
 
     try:
         tello = get_tello()
+        # NOTE: Tello uses the first letter of the direction to interpret which direction to flip to
         flipped = tello.flip(direction[0])
 
         status = "success" if flipped else "error"
         message = f"{'Successfully' if flipped else 'Failed to'} flip {direction}"
 
-        socketio.emit("move_status", {
+        emit("move_status", {
             "status": status,
             "message": message
-        }, namespace="/tello")
+        })
 
     except Exception as e:
         logger.error(f"Flip error: {e}")
-        socketio.emit('move_status', {
+        emit('move_status', {
             "status": "error",
             "message": f"Unexpected error during movement: {str(e)}"
-        }, namespace="/tello")
+        })
 
 
-@socketio.on("state", namespace="/tello")
+@socketio.on("state", namespace=TELLO_NAMESPACE)
 def get_state():
     """
     Retrieve and emit Tello drone state
     """
     try:
+        logger.info("Retrieving Tello state")
+
         tello = get_tello()
         state = tello.get_current_state()
 
         if state:
-            socketio.emit('state_update', {
+            logger.info("Tello state retrieved")
+            emit('state_update', {
                 "status": "success",
                 "state": state
-            }, namespace="/tello")
+            })
         else:
-            socketio.emit('state_update', {
+            logger.warning("Could not retrieve Tello state")
+            emit('state_update', {
                 "status": "error",
                 "message": "Could not retrieve Tello state"
-            }, namespace="/tello")
+            })
 
     except Exception as e:
-        logger.error(f"State retrieval error: {e}")
-        socketio.emit('state_update', {
+        logger.error("State retrieval error", exc_info=True)
+        emit('state_update', {
             "status": "error",
             "message": f"Unexpected error retrieving state: {str(e)}"
-        }, namespace="/tello")
+        })
