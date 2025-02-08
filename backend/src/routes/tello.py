@@ -1,14 +1,14 @@
 from flask import Blueprint, g
 from flask_socketio import emit
 
-from main import socketio
-from models import Tello
-from utils.Logger import Logger
+from src.main import socketio
+from src.models import Tello
+from src.utils.Logger import Logger
 
+tello_bp = Blueprint("tello", __name__)
 TELLO_NAMESPACE = "/tello"
 
-logger = Logger.get_logger()
-tello_bp = Blueprint("tello", __name__)
+logger = Logger.get_logger(name="TelloRoutes")
 
 
 def get_tello():

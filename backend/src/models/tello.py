@@ -64,7 +64,7 @@ class Tello:
     CAMERA_DOWNWARD = 1
 
     # Set up logger
-    logger = Logger.get_logger(name="Tello Model")
+    logger = Logger.get_logger(name="TelloModel")
 
     # Conversion functions for state protocol fields
     INT_STATE_FIELDS = (

@@ -4,6 +4,8 @@ from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO
 
+from src.utils.Logger import Logger
+
 SUPPORTED_ORIGINS = [
     "http://localhost:5001",
     "http://localhost:5173",
@@ -12,7 +14,7 @@ SUPPORTED_ORIGINS = [
 
 app = Flask(__name__)
 
-logging.basicConfig(level=logging.INFO)
+logger = Logger.get_logger("TelloMain")
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
 CORS(app, resources={
@@ -33,18 +35,9 @@ socketio = SocketIO(
 )
 
 # Import routes after initializing app to avoid circular imports
-from routes.tello import tello_bp
+from src.routes.tello import tello_bp
 
 app.register_blueprint(tello_bp)
-
-# @app.after_request
-# def add_cors_headers(response):
-#     response.headers['Access-Control-Allow-Origin'] = '*'
-#     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS, PUT, DELETE'
-#     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-#     response.headers['Access-Control-Allow-Credentials'] = 'true'
-#     return response
-
 
 if __name__ == '__main__':
     try:
@@ -57,4 +50,4 @@ if __name__ == '__main__':
             allow_unsafe_werkzeug=True
         )
     except Exception:
-        logging.error('Server startup error', exc_info=True)
+        logger.error('Server startup error', exc_info=True)
