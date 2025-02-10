@@ -36,6 +36,8 @@ class TelloSocketClient {
             autoConnect: false,
             transports: transport,
             reconnection: true,
+            withCredentials: true,
+            timeout: 5000,
         });
     }
 

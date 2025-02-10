@@ -1,49 +1,27 @@
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
+import TelloSocketClient from "@/services/TelloSocketClient.ts";
 import ControlPanel from "@/pages/ControlPanel.tsx";
 import Connect from "@/pages/Connect.tsx";
-import TelloSocketClient from './services/TelloSocketClient';
 
 
 function App() {
     const [isConnected, setIsConnected] = useState(false);
-    const [telloClient, setTelloClient] = useState<TelloSocketClient | null>(null);
-    const [connectionError, setConnectionError] = useState<string | null>(null);
 
-    const handleConnect = () => {
-        try {
-            const tello = new TelloSocketClient("http://localhost:5001", ["websocket"]);
-            tello.connect();
-            setTelloClient(tello);
-            setIsConnected(true);
-        } catch (error) {
-            setConnectionError("Failed to initialize drone connection");
-            console.error("Connection Error:", error);
-        }
-    };
-
-    useEffect(() => {
-        return () => {
-            if (telloClient) {
-                telloClient.disconnect();
-            }
-        };
-    }, [telloClient]);
+    const telloClient = new TelloSocketClient("http://localhost:5001", ["websocket"]);
 
     return (
         <>
-            {connectionError && (
-                <div className="error-banner">
-                    {connectionError}
-                </div>
-            )}
-
-            {isConnected && telloClient ? (
+            {isConnected ? (
                 <ControlPanel tello={telloClient}/>
             ) : (
-                <Connect onConnect={handleConnect}/>
-            )}
+                <Connect onConnect={() => {
+                    telloClient.connect();
+                    setIsConnected(telloClient.socket.connected)
+                }}/>
+            )
+            }
         </>
-    );
+    )
 }
 
 export default App;
