@@ -1,7 +1,7 @@
 import {io, Socket} from "socket.io-client";
 import winstonLogger from "@/services/Logger.ts";
 
-const logger = winstonLogger({logName: "TelloSocketClient", level: "info"});
+const logger = winstonLogger({logName: "TelloSocketClient", level: "debug"});
 
 interface ServerToClientEvents {
     noArg: () => void;
@@ -29,7 +29,7 @@ type ValidRotations = "cw" | "ccw";
 type ValidFlips = "left" | "right" | "forward" | "backward";
 
 class TelloSocketClient {
-    private socket: Socket<ServerToClientEvents, ClientToServerEvents>;
+    readonly socket: Socket<ServerToClientEvents, ClientToServerEvents>;
 
     constructor(domain: string, transport: Transport[]) {
         this.socket = io(domain, {
@@ -94,7 +94,7 @@ class TelloSocketClient {
         this.registerEventHandler("state_update", callback);
     }
 
-    private registerEventHandler(event: string, callback?: (message: ServerMessage) => void) {
+    private registerEventHandler(event: keyof ServerToClientEvents, callback?: (message: ServerMessage) => void) {
         this.socket.on(event, (payload: string) => {
             const message = this.parseMessageFromServer(payload);
             logger.info(`Received message from ${event}: ${JSON.stringify(message)}`);
@@ -128,3 +128,5 @@ function logMethodOperations(originalMethod: any, context: ClassMethodDecoratorC
 
     return wrapper;
 }
+
+export default TelloSocketClient;

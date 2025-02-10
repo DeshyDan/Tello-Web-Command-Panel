@@ -5,10 +5,9 @@ import logo from "../assets/dji.svg"
 
 interface Props {
     onConnect: () => void
-    isConnected: boolean
 }
 
-const DJIControlPanel = ({onConnect, isConnected}: Props) => {
+const Connect = ({onConnect}: Props) => {
     return (
         <div className="min-h-screen bg-black flex flex-col items-center">
             {/* Header */}
@@ -55,4 +54,4 @@ const DJIControlPanel = ({onConnect, isConnected}: Props) => {
     );
 };
 
-export default DJIControlPanel;
+export default Connect;

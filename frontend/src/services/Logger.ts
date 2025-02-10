@@ -35,7 +35,7 @@ const winstonLogger = (input: { logName: string; level: string }): winston.Logge
                     winston.format.printf(
                         info =>
                             // https://stackoverflow.com/a/69044670/20358783 more detailLocaleString
-                            `${new Date(info.timestamp).toLocaleDateString('tr-Tr', {
+                            `${new Date(info.timestamp as string | number | Date).toLocaleDateString('tr-Tr', {
                                 year: 'numeric',
                                 month: '2-digit',
                                 day: '2-digit',
@@ -51,7 +51,7 @@ const winstonLogger = (input: { logName: string; level: string }): winston.Logge
                 level: 'error',
                 format: winston.format.printf(
                     info =>
-                        `${new Date(info.timestamp).toLocaleDateString('tr-Tr', {
+                        `${new Date(info.timestamp as string | number | Date).toLocaleDateString('tr-Tr', {
                             year: 'numeric',
                             month: '2-digit',
                             day: '2-digit',
@@ -65,7 +65,7 @@ const winstonLogger = (input: { logName: string; level: string }): winston.Logge
                 level: 'warn',
                 format: winston.format.printf(
                     info =>
-                        `${new Date(info.timestamp).toLocaleDateString('tr-Tr', {
+                        `${new Date(info.timestamp as string | number | Date).toLocaleDateString('tr-Tr', {
                             year: 'numeric',
                             month: '2-digit',
                             day: '2-digit',
@@ -79,7 +79,7 @@ const winstonLogger = (input: { logName: string; level: string }): winston.Logge
                 level: 'silly',
                 format: winston.format.printf(
                     info =>
-                        `${new Date(info.timestamp).toLocaleDateString('tr-Tr', {
+                        `${new Date(info.timestamp as string | number | Date).toLocaleDateString('tr-Tr', {
                             year: 'numeric',
                             month: '2-digit',
                             day: '2-digit',
@@ -92,7 +92,7 @@ const winstonLogger = (input: { logName: string; level: string }): winston.Logge
             new winston.transports.File({
                 format: winston.format.printf(
                     info =>
-                        `${new Date(info.timestamp).toLocaleDateString('tr-Tr', {
+                        `${new Date(info.timestamp as string | number | Date).toLocaleDateString('tr-Tr', {
                             year: 'numeric',
                             month: '2-digit',
                             day: '2-digit',
