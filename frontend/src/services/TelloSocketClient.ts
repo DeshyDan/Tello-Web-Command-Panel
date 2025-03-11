@@ -1,7 +1,7 @@
 import {io, Socket} from "socket.io-client";
-import winstonLogger from "@/services/Logger.ts";
+import Logger from "@/services/Logger.ts";
 
-const logger = winstonLogger({logName: "TelloSocketClient", level: "debug"});
+const logger = new Logger('TelloSocketClient');
 
 interface ServerToClientEvents {
     noArg: () => void;
@@ -31,67 +31,70 @@ type ValidFlips = "left" | "right" | "forward" | "backward";
 class TelloSocketClient {
     readonly socket: Socket<ServerToClientEvents, ClientToServerEvents>;
 
-    constructor(domain: string, transport: Transport[]) {
+    constructor(domain: string, transport?: Transport[]) {
         this.socket = io(domain, {
             autoConnect: false,
-            transports: transport,
             reconnection: true,
             withCredentials: true,
-            timeout: 5000,
+            extraHeaders: {
+                'Access-Control-Allow-Origin': '*'
+            },
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
         });
     }
 
-    @logMethodOperations
+    //@logMethodOperations
     public connect() {
         this.socket.connect();
     }
 
-    @logMethodOperations
+    //@logMethodOperations
     public disconnect() {
         this.socket.disconnect();
     }
 
-    @logMethodOperations
+    //@logMethodOperations
     public move(direction: ValidMoves) {
         this.socket.send("move", direction);
     }
 
-    @logMethodOperations
+    //@logMethodOperations
     public rotate(direction: ValidRotations) {
         this.socket.send("rotate", direction);
     }
 
-    @logMethodOperations
+    //@logMethodOperations
     public flip(direction: ValidFlips) {
         this.socket.send("flip", direction);
     }
 
-    @logMethodOperations
+    //@logMethodOperations
     public getState() {
         this.socket.send("state");
     }
 
-    @logMethodOperations
+    //@logMethodOperations
     public onConnectionStatus(callback?: (message: ServerMessage) => void) {
         this.registerEventHandler("connection_status", callback);
     }
 
-    @logMethodOperations
+    //@logMethodOperations
     public onMoveStatus(callback?: (message: ServerMessage) => void) {
         this.registerEventHandler("move_status", callback);
     }
 
-    @logMethodOperations
+    //@logMethodOperations
     public onRotateStatus(callback?: (message: ServerMessage) => void) {
         this.registerEventHandler("rotate_status", callback);
     }
 
-    @logMethodOperations
+    //@logMethodOperations
     public onFlipStatus(callback?: (message: ServerMessage) => void) {
         this.registerEventHandler("flip_status", callback);
     }
 
-    @logMethodOperations
+    //@logMethodOperations
     public onStateUpdate(callback?: (message: ServerMessage) => void) {
         this.registerEventHandler("state_update", callback);
     }
@@ -118,7 +121,7 @@ class TelloSocketClient {
     }
 }
 
-function logMethodOperations(originalMethod: any, context: ClassMethodDecoratorContext) {
+/*function logMethodOperations(originalMethod: any, context: ClassMethodDecoratorContext) {
     const methodName = String(context.name);
 
     function wrapper(this: any, ...args: any[]) {
@@ -129,6 +132,6 @@ function logMethodOperations(originalMethod: any, context: ClassMethodDecoratorC
     }
 
     return wrapper;
-}
+}*/
 
 export default TelloSocketClient;

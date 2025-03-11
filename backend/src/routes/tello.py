@@ -37,8 +37,6 @@ def on_connect():
         status = "success" if success else "error"
         message = f"{'Successfully connected' if success else 'Failed to connect'} to Tello drone"
 
-        tello.takeoff()
-
         logger.info("Tello drone connected and took off")
 
         emit("connection_status", {
@@ -75,8 +73,25 @@ def on_disconnect():
         logger.error("Error during disconnection: ", exc_info=True)
 
 
+@socketio.on("takeoff", namespace=TELLO_NAMESPACE)
+def on_takeoff():
+    try:
+        tello = get_tello()
+        tello.takeoff()
+        emit("takeoff_status", {
+            "status": "success",
+            "message": "Tello drone took off"
+        })
+    except Exception as e:
+        logger.error(f"Takeoff error: {e}", exc_info=True)
+        emit("takeoff_status", {
+            "status": "error",
+            "message": f"Takeoff failed: {str(e)}"
+        })
+
+
 @socketio.on("move", namespace=TELLO_NAMESPACE)
-def move(direction):
+def on_move(direction):
     """
     Moves Tello in a given direction.
     Parameters:
@@ -115,7 +130,7 @@ def move(direction):
 
 
 @socketio.on("rotate", namespace=TELLO_NAMESPACE)
-def rotate(direction):
+def on_rotate(direction):
     """
     Rotates Tello in given direction
     """
@@ -158,7 +173,7 @@ def rotate(direction):
 
 
 @socketio.on("flip", namespace=TELLO_NAMESPACE)
-def flip(direction):
+def on_flip(direction):
     """
     Flips Tello in given direction
     Parameters:
@@ -198,7 +213,7 @@ def flip(direction):
 
 
 @socketio.on("state", namespace=TELLO_NAMESPACE)
-def get_state():
+def on_get_state():
     """
     Retrieve and emit Tello drone state
     """

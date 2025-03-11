@@ -7,6 +7,7 @@ from flask_socketio import SocketIO
 from src.utils.Logger import Logger
 
 SUPPORTED_ORIGINS = [
+    # Avoid 5000, on Mac, it used by AirTunes/800.74.5
     "http://localhost:5001",
     "http://localhost:5173",
     "*"
@@ -44,8 +45,8 @@ if __name__ == '__main__':
         socketio.run(
             app,
             debug=True,
-            host='127.0.0.1',
-            port=5000,
+            host='0.0.0.0',
+            port=5001,
             log_output=True,
             allow_unsafe_werkzeug=True
         )

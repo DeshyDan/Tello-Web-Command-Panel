@@ -8,6 +8,7 @@ interface Props {
 }
 
 const Connect = ({onConnect}: Props) => {
+
     return (
         <div className="min-h-screen bg-black flex flex-col items-center">
             {/* Header */}
@@ -43,7 +44,7 @@ const Connect = ({onConnect}: Props) => {
                             variant="secondary"
 
                             className="h-30 w-60 rounded-2xl text-3xl px-8 bg-white text-black hover:bg-gray-300"
-                            onClick={() => onConnect()}
+                            onClick={onConnect}
                         >
                             Connect
                         </Button>

@@ -1,13 +1,18 @@
+// App.tsx
 import {useState} from 'react';
-import TelloSocketClient from "@/services/TelloSocketClient.ts";
 import ControlPanel from "@/pages/ControlPanel.tsx";
 import Connect from "@/pages/Connect.tsx";
+import TelloSocketClient from "@/services/TelloSocketClient.ts";
 
+function getTelloClient() {
+    console.log("Creating Tello Client");
+    return new TelloSocketClient("http://localhost:5001/tello", ["websocket"]);
+}
 
 function App() {
-    const [isConnected, setIsConnected] = useState(false);
+    const [telloClient] = useState(getTelloClient);
 
-    const telloClient = new TelloSocketClient("http://localhost:5001", ["websocket"]);
+    const [isConnected, setIsConnected] = useState(false);
 
     return (
         <>
@@ -15,13 +20,13 @@ function App() {
                 <ControlPanel tello={telloClient}/>
             ) : (
                 <Connect onConnect={() => {
-                    telloClient.connect();
-                    setIsConnected(telloClient.socket.connected)
+                    telloClient.connect()
+                    setIsConnected(() => (telloClient.socket.connected))
+
                 }}/>
-            )
-            }
+            )}
         </>
-    )
+    );
 }
 
 export default App;
