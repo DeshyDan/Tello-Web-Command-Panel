@@ -5,10 +5,10 @@ from src.main import socketio
 from src.models import Tello
 from src.utils.Logger import Logger
 
-tello_bp = Blueprint("tello", __name__)
+tello_socket_bp = Blueprint("tello_socket", __name__)
 TELLO_NAMESPACE = "/tello"
 
-logger = Logger.get_logger(name="TelloRoutes")
+logger = Logger.get_logger(name="TelloSocketRoutes")
 
 
 def get_tello():
@@ -25,7 +25,7 @@ def get_tello():
 
 
 @socketio.on("connect", namespace=TELLO_NAMESPACE)
-def on_connect():
+def on_connect(session_id):
     """
     When the client connects to the Tello namespace, attempt to connect to the Tello drone
     """
@@ -37,6 +37,7 @@ def on_connect():
         status = "success" if success else "error"
         message = f"{'Successfully connected' if success else 'Failed to connect'} to Tello drone"
 
+        tello.takeoff()
         logger.info("Tello drone connected and took off")
 
         emit("connection_status", {
@@ -52,7 +53,7 @@ def on_connect():
 
 
 @socketio.on("disconnect", namespace=TELLO_NAMESPACE)
-def on_disconnect():
+def on_disconnect(session_id):
     """
     When the client disconnects, stop the drone and clear resources
     """

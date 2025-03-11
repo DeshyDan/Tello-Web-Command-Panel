@@ -36,7 +36,7 @@ socketio = SocketIO(
 )
 
 # Import routes after initializing app to avoid circular imports
-from src.routes.tello import tello_bp
+from src.routes.http.tello import tello_bp
 
 app.register_blueprint(tello_bp)
 

@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from src.main import app, socketio
-from src.routes.tello import TELLO_NAMESPACE
+from src.routes.socket.tello import TELLO_NAMESPACE
 from src.utils.Logger import Logger
 from tests.decorator_utlis import log_test
 
