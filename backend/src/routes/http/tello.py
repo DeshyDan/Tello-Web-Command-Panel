@@ -31,6 +31,7 @@ def connect():
 
         if success:
             logger.info("Tello drone connected")
+            tello.takeoff()
             return response_generator("Successfully connected to Tello drone", 200)
         else:
             logger.info("Failed to connect to Tello drone")
@@ -170,6 +171,8 @@ def state():
         if not state:
             logger.error("Failed to get Tello state")
             return response_generator("Failed to get Tello state", 500)
+
+
 
         logger.info("Successfully got Tello state")
         return response_generator(state, 200)

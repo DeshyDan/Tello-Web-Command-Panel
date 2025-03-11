@@ -2,59 +2,67 @@ import {Button} from "@/components/ui/button";
 import {Card, CardContent} from "@/components/ui/card";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {Camera} from 'lucide-react';
-import TelloSocketClient from "@/services/TelloSocketClient.ts";
 import {useEffect, useState} from "react";
+import TelloHttpClient, {DroneState} from "@/services/TelloHttpClient.ts";
 
 interface Props {
-    tello: TelloSocketClient;
+    tello: TelloHttpClient;
 }
 
 const ControlPanel = ({tello}: Props) => {
-    const [state, setState] = useState<string>("Fetching state...");
-    const [connectionStatus, setConnectionStatus] = useState<string>("Disconnected");
-    const [moveStatus, setMoveStatus] = useState<string>("");
-    const [rotateStatus, setRotateStatus] = useState<string>("");
-    const [flipStatus, setFlipStatus] = useState<string>("");
+    const [state, setState] = useState<DroneState | null>(null);
+    const [responses, setResponses] = useState<string[]>([]);
+
+    const addResponse = (message: string) => {
+        setResponses(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`]);
+    };
+
+    const getStateAfterDelay = async (delay: number) => {
+        setTimeout(async () => {
+            try {
+                const state = await tello.getState();
+                setState(state);
+                addResponse("State fetched successfully");
+            } catch (error) {
+                addResponse(error.message);
+            }
+        }, delay);
+    };
 
     useEffect(() => {
-        // Add socket event listeners
-        tello.onConnectionStatus((message) => {
-            setConnectionStatus(message.message);
-        });
-
-        tello.onMoveStatus((message) => {
-            setMoveStatus(message.message);
-        });
-
-        tello.onRotateStatus((message) => {
-            setRotateStatus(message.message);
-        });
-
-        tello.onFlipStatus((message) => {
-            setFlipStatus(message.message);
-        });
-
-        tello.onStateUpdate((message) => {
-            setState(message.message);
-        });
-
-        // Cleanup listeners on component unmount
-        return () => {
-            tello.disconnect();
-        };
-    }, [tello]);
+        getStateAfterDelay(1000);
+        const currentState = JSON.stringify(state);
+        addResponse(currentState)
+    }, []);
 
     // Event handlers for keypad presses
-    const handleMove = (direction: "up" | "down" | "left" | "right" | "forward" | "back") => {
-        tello.move(direction);
+    const handleMove = async (direction: "up" | "down" | "left" | "right" | "forward" | "back") => {
+        try {
+            const response = await tello.move(direction);
+            addResponse(response);
+        } catch (error) {
+            addResponse(error.message);
+        }
+
+
     };
 
-    const handleRotate = (direction: "cw" | "ccw") => {
-        tello.rotate(direction);
+    const handleRotate = async (direction: "cw" | "ccw") => {
+        try {
+            const response = await tello.rotate(direction);
+            addResponse(response);
+        } catch (error) {
+            addResponse(error.message);
+        }
     };
 
-    const handleFlip = (direction: "left" | "right" | "forward" | "backward") => {
-        tello.flip(direction);
+    const handleFlip = async (direction: "left" | "right" | "forward" | "backward") => {
+        try {
+            const response = await tello.flip(direction);
+            addResponse(response);
+        } catch (error) {
+            addResponse(error.message);
+        }
     };
 
     return (
@@ -86,23 +94,39 @@ const ControlPanel = ({tello}: Props) => {
                         <div className="absolute top-4 right-4 flex gap-4 items-center">
                             <div className="bg-zinc-800/80 px-3 py-1 rounded-md">00:32:00</div>
                             <div className="bg-zinc-800/80 px-3 py-1 rounded-md flex items-center gap-2">
-                                10% <div className="w-4 h-2 bg-red-500 rounded-sm"/>
+                                {state === null ? (
+                                    <div className="w-4 h-2 bg-gray-500 rounded-sm"/>
+                                ) : state.batteryPercentage <= 20 ? (
+                                    <>
+                                        {state.batteryPercentage}
+                                        <div className="w-4 h-2 bg-red-500 rounded-sm"/>
+                                    </>
+                                ) : state.batteryPercentage <= 50 ? (
+                                    <>
+                                        {state.batteryPercentage}
+                                        <div className="w-4 h-2 bg-yellow-500 rounded-sm"/>
+                                    </>
+                                ) : (
+                                    <>
+                                        {state.batteryPercentage}
+                                        <div className="w-4 h-2 bg-green-500 rounded-sm"/>
+                                    </>
+                                )}
                             </div>
-                        </div>
-
-                        {/* Telemetry Overlay */}
-                        <div className="absolute left-4 bottom-4 space-y-2 bg-black/50 p-4 rounded-2xl">
-                            <div>
-                                <div className="text-sm opacity-70">Speed</div>
-                                <div className="text-2xl">50 m/s</div>
-                            </div>
-                            <div>
-                                <div className="text-sm opacity-70">Altitude</div>
-                                <div className="text-2xl">885 m</div>
-                            </div>
-                            <div>
-                                <div className="text-sm opacity-70">Temperature</div>
-                                <div className="text-2xl">30 °C</div>
+                            {/* Telemetry Overlay */}
+                            <div className="absolute left-4 bottom-4 space-y-2 bg-black/50 p-4 rounded-2xl">
+                                <div>
+                                    <div className="text-sm opacity-70">Speed</div>
+                                    <div className="text-2xl">{state == null ? "-" : state.totalSpeed} m/s</div>
+                                </div>
+                                <div>
+                                    <div className="text-sm opacity-70">Height</div>
+                                    <div className="text-2xl">{state == null ? "-" : state.timeOfFlight} m</div>
+                                </div>
+                                <div>
+                                    <div className="text-sm opacity-70">Temperature</div>
+                                    <div className="text-2xl">{state == null ? "-" : state.averageTemperature} °C</div>
+                                </div>
                             </div>
                         </div>
                     </CardContent>
@@ -199,11 +223,12 @@ const ControlPanel = ({tello}: Props) => {
                         <CardContent className="p-4">
                             <div className="font-mono text-sm">
                                 <div className="font-bold mb-2">DJI TELLO</div>
-                                <div className="text-blue-600">{state}</div>
-                                <div>Connection: {connectionStatus}</div>
-                                <div>Move: {moveStatus}</div>
-                                <div>Rotate: {rotateStatus}</div>
-                                <div>Flip: {flipStatus}</div>
+                                {/*TODO: Destructure the state from backend....Also print out resoibses in the console*/}
+                                {responses.map((response, index) => (
+                                    <div key={index} className="mb-1 font-mono text-sm">
+                                        {response}
+                                    </div>
+                                ))}
                             </div>
                         </CardContent>
                     </Card>

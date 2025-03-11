@@ -4,10 +4,11 @@ import tello from "../assets/tello.png"
 import logo from "../assets/dji.svg"
 
 interface Props {
-    onConnect: () => void
+    onConnect: () => void,
+    isConnecting?: boolean
 }
 
-const Connect = ({onConnect}: Props) => {
+const Connect = ({onConnect, isConnecting}: Props) => {
 
     return (
         <div className="min-h-screen bg-black flex flex-col items-center">
@@ -42,11 +43,11 @@ const Connect = ({onConnect}: Props) => {
                         {/* Connect Button */}
                         <Button
                             variant="secondary"
-
+                            disabled={isConnecting}
                             className="h-30 w-60 rounded-2xl text-3xl px-8 bg-white text-black hover:bg-gray-300"
                             onClick={onConnect}
                         >
-                            Connect
+                            {isConnecting ? "Connecting..." : "Connect"}
                         </Button>
                     </CardContent>
                 </Card>
